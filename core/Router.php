@@ -11,16 +11,17 @@ class Router
         $this->basePath = rtrim($basePath, '/');
     }
 
-    public function addRoute($method, $path, $handler)
+       public function addRoute($method, $path, $handler, $public = false)
     {
         $this->routes[] = [
             'method' => strtoupper($method),
             'path' => "/api/{$this->version}" . $path,
-            'handler' => $handler
+            'handler' => $handler,
+            'public' => $public
         ];
     }
 
-    public function dispatch()
+    public function resolve()
     {
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -29,7 +30,6 @@ class Router
             $uri = substr($uri, strlen($this->basePath));
         }
 
-        // Asegurar que la URI comience con 
         $uri = '/' . ltrim($uri, '/');
 
         foreach ($this->routes as $route) {
@@ -38,12 +38,24 @@ class Router
 
             if ($route['method'] === $method && preg_match($pattern, $uri, $matches)) {
                 array_shift($matches);
-                return call_user_func_array($route['handler'], $matches);
+                return ['handler' => $route['handler'], 'params' => $matches, 'public' => $route['public']];
             }
         }
 
-        http_response_code(404);
-        echo json_encode(['message' => 'Ruta no encontrada', 'uri' => $uri]);
+        return null;
+    }
+
+    public function dispatch()
+    {
+        $result = $this->resolve();
+
+        if ($result === null) {
+            http_response_code(404);
+            echo json_encode(['message' => 'Ruta no encontrada']);
+            return;
+        }
+
+        return call_user_func_array($result['handler'], $result['params']);
     }
 }
 ?>
