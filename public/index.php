@@ -4,12 +4,18 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 require_once '../core/Router.php';
 require_once '../models/AuthMiddleware.php';
 require_once '../config/database.php';
 require_once '../resources/v1/UserResource.php';
 require_once '../resources/v1/ProductResource.php';
 require_once '../resources/v2/UserResource.php';
+require_once '../resources/v3/TareaResource.php';
 
 $scriptName = dirname($_SERVER['SCRIPT_NAME']);
 $basePath = $scriptName;
@@ -54,8 +60,17 @@ $routerV2->addRoute('POST', '/productos', [$productResource, 'store']);
 $routerV2->addRoute('PUT', '/productos/{id}', [$productResource, 'update']);
 $routerV2->addRoute('DELETE', '/productos/{id}', [$productResource, 'destroy']);
 
-// --- Resolver ruta ---
-$result = $routerV1->resolve() ?? $routerV2->resolve();
+// --- v3: API de Tareas ---
+$routerV3 = new Router('v3', $basePath);
+$tareaResource = new TareaResource();
+
+$routerV3->addRoute('GET', '/tareas', [$tareaResource, 'index'], true);       // pública (o quita el true si quieres que también pida token)
+$routerV3->addRoute('GET', '/tareas/{id}', [$tareaResource, 'show'], true);
+$routerV3->addRoute('POST', '/tareas', [$tareaResource, 'store'], true);
+$routerV3->addRoute('PUT', '/tareas/{id}', [$tareaResource, 'update'], true);
+
+// --- Resuelve la dependiendo de la version ruta ---
+$result = $routerV1->resolve() ?? $routerV2->resolve() ?? $routerV3->resolve();
 
 if (!$result) {
     http_response_code(404);
@@ -63,7 +78,7 @@ if (!$result) {
     exit;
 }
 
-// --- Filtro de autenticación (salta si la ruta es pública) ---
+// --- Middleware ---
 if (empty($result['public'])) {
     $authUser = $auth->authenticate(); // responde 401 y hace exit si falla
 

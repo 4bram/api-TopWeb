@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: API de Gestión de Tareas
+  description: >
+    Contrato de la API para la práctica de Introducción a API-First.
+    Define los endpoints antes de implementar la lógica de negocio.
+  version: "1.0.0"
+
+servers:
+  - url: http://api-abraham.local/api/tareas-api
+    description: Servidor local (WSL2)
+
+paths:
+  /tareas:
+    get:
+      summary: Listar todas las tareas
+      operationId: listarTareas
+      tags:
+        - Tareas
+      responses:
+        "200":
+          description: Lista de tareas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Tarea"
+
+    post:
+      summary: Crear una nueva tarea
+      operationId: crearTarea
+      tags:
+        - Tareas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TareaInput"
+      responses:
+        "201":
+          description: Tarea creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tarea"
+        "400":
+          description: Datos incompletos o inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tareas/{id}:
+    get:
+      summary: Obtener una tarea por su ID
+      operationId: obtenerTarea
+      tags:
+        - Tareas
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+      responses:
+        "200":
+          description: Tarea encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tarea"
+        "404":
+          description: Tarea no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    put:
+      summary: Actualizar una tarea existente
+      operationId: actualizarTarea
+      tags:
+        - Tareas
+      parameters:
+        - $ref: "#/components/parameters/TareaId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TareaInput"
+      responses:
+        "200":
+          description: Tarea actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tarea"
+        "404":
+          description: Tarea no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Datos incompletos o inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  parameters:
+    TareaId:
+      name: id
+      in: path
+      required: true
+      description: ID único de la tarea
+      schema:
+        type: integer
+        example: 1
+
+  schemas:
+    Tarea:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        titulo:
+          type: string
+          example: "Estudiar API-First"
+        completada:
+          type: boolean
+          example: false
+        fecha_creacion:
+          type: string
+          format: date-time
+          example: "2026-09-07T10:00:00Z"
+      required:
+        - id
+        - titulo
+        - completada
+        - fecha_creacion
+
+    TareaInput:
+      type: object
+      properties:
+        titulo:
+          type: string
+          example: "Estudiar API-First"
+        completada:
+          type: boolean
+          example: false
+      required:
+        - titulo
+        - completada
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Tarea no encontrada"
