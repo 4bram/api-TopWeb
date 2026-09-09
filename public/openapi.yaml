@@ -7,8 +7,11 @@ info:
   version: "1.0.0"
 
 servers:
+  - url: http://topicosweb.celaya.tecnm.mx/20031313/api/public/api/v3
+    description: Servidor de producción (VPS)
   - url: http://api-abraham.local/api/tareas-api
     description: Servidor local (WSL2)
+
 
 paths:
   /tareas:
